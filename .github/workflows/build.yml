@@ -16,17 +16,27 @@ concurrency:
 
 jobs:
   build:
-    name: linux-${{ matrix.arch }}
+    name: linux-${{ matrix.suffix }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
         include:
-          - arch: x86_64
+          - suffix: x86_64
+            arch: x86_64
             runner: ubuntu-24.04
-          - arch: aarch64
+            extra: ""
+          - suffix: aarch64
+            arch: aarch64
             runner: ubuntu-24.04-arm
+            extra: ""
+          # conservative variant: no sysfs/hwloc probing, no MSR, no DMI.
+          # For unusual/legacy Linux environments; it is still a Linux ELF.
+          - suffix: x86_64-compat
+            arch: x86_64
+            runner: ubuntu-24.04
+            extra: "-DWITH_HWLOC=OFF -DWITH_MSR=OFF -DWITH_DMI=OFF"
 
     steps:
       - name: Checkout
@@ -38,6 +48,7 @@ jobs:
           docker run --rm \
             -v "$PWD:/work" \
             -w /work \
+            -e CMAKE_EXTRA="${{ matrix.extra }}" \
             alpine:3.20 \
             sh -euc '
               apk add --no-cache build-base cmake linux-headers perl wget file \
@@ -56,7 +67,8 @@ jobs:
                 -DWITH_OPENCL=OFF \
                 -DWITH_CUDA=OFF \
                 -DWITH_NVML=OFF \
-                -DWITH_ADL=OFF
+                -DWITH_ADL=OFF \
+                $CMAKE_EXTRA
 
               echo "== build =="
               cmake --build build-ci --parallel "$(nproc)"
@@ -86,7 +98,7 @@ jobs:
               cp "$BIN" dist/arisk
               chmod 0755 dist/arisk
               TOP="$PWD"
-              OUT="$TOP/dist/arisk-linux-${{ matrix.arch }}.tar.gz"
+              OUT="$TOP/dist/arisk-linux-${{ matrix.suffix }}.tar.gz"
               tar -C "$TOP/dist" -czf "$OUT" arisk
               tar -tzf "$OUT"
               chmod -R a+rX dist
@@ -102,7 +114,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: arisk-linux-${{ matrix.arch }}
+          name: arisk-linux-${{ matrix.suffix }}
           path: dist/*.tar.gz
           if-no-files-found: error
 
