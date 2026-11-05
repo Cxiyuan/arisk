@@ -1,4 +1,6 @@
-# XMRig
+# XMRig (arisk fork)
+
+[![static-build](https://github.com/Cxiyuan/arisk/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/Cxiyuan/arisk/actions/workflows/build.yml)
 
 [![Github All Releases](https://img.shields.io/github/downloads/xmrig/xmrig/total.svg)](https://github.com/xmrig/xmrig/releases)
 [![GitHub release](https://img.shields.io/github/release/xmrig/xmrig/all.svg)](https://github.com/xmrig/xmrig/releases)
