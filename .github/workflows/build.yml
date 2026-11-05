@@ -85,7 +85,10 @@ jobs:
               mkdir -p dist
               cp "$BIN" dist/arisk
               chmod 0755 dist/arisk
-              tar -C dist -czf "arisk-linux-${{ matrix.arch }}.tar.gz" arisk
+              TOP="$PWD"
+              OUT="$TOP/dist/arisk-linux-${{ matrix.arch }}.tar.gz"
+              tar -C "$TOP/dist" -czf "$OUT" arisk
+              tar -tzf "$OUT"
               chmod -R a+rX dist
               ls -l dist
             '
