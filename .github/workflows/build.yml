@@ -84,10 +84,17 @@ jobs:
               echo "== package =="
               mkdir -p dist
               cp "$BIN" dist/arisk
-              chmod +x dist/arisk
+              chmod 0755 dist/arisk
               tar -C dist -czf "arisk-linux-${{ matrix.arch }}.tar.gz" arisk
+              chmod -R a+rX dist
               ls -l dist
             '
+
+      - name: Fix artifact ownership
+        run: |
+          set -eu
+          sudo chown -R "$(id -u):$(id -g)" dist build-ci deps
+          ls -l dist
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
