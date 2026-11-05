@@ -40,8 +40,22 @@ fully static binaries:
 * CI asserts static linkage (`readelf -d` shows no `NEEDED`, `ldd` reports
   "not a dynamic executable") and runs `--version` before uploading artifacts
 
+Artifacts produced on every run:
+
+| Artifact | Notes |
+|---|---|
+| `arisk-linux-x86_64.tar.gz` | standard build (hwloc + MSR + DMI) |
+| `arisk-linux-aarch64.tar.gz` | standard build for arm64 |
+| `arisk-linux-x86_64-compat.tar.gz` | conservative build: no hwloc/libsysfs probing, no MSR, no DMI; for legacy or unusual Linux environments |
+
 Download the artifacts from the Actions run, or from **Releases** when a `v*`
 tag is pushed.
+
+> **Note on ESXi**: none of the artifacts is an ESXi *host* binary. ESXi is not
+> Linux — its userworld runs on VMkernel with a different (and closed) ABI, and
+> ESXi 7/8 additionally enforces `execInstalledOnly` (binary must come from a
+> VIB). The `compat` build only reduces runtime probing; it remains a Linux ELF.
+> To mine on ESXi hardware, run it inside a Linux VM.
 
 ## 本分支说明
 
