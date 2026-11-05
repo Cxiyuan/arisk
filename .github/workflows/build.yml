@@ -63,16 +63,23 @@ jobs:
 
               echo "== verify =="
               BIN="$(ls build-ci/xmrig*)"
-              file "$BIN"
+              file "$BIN" | tee /tmp/file.txt
+              grep -q "statically linked" /tmp/file.txt || {
+                echo "::error::binary is not statically linked"; exit 1; }
+
               if readelf -d "$BIN" | grep -q NEEDED; then
-                echo "binary has dynamic dependencies:"; readelf -d "$BIN"; exit 1
+                echo "::error::binary has dynamic dependencies"; readelf -d "$BIN"; exit 1
               fi
-              if ldd "$BIN" 2>&1 | grep -qi "not a dynamic executable"; then
-                echo "OK: fully static"
-              else
-                ldd "$BIN"; exit 1
-              fi
+
+              LDD="$(ldd "$BIN" 2>&1 || true)"
+              echo "$LDD"
+              case "$LDD" in
+                *"not a dynamic executable"*|*"Not a valid dynamic program"*|*"statically linked"*) ;;
+                *) echo "::error::ldd reports a dynamic binary"; exit 1 ;;
+              esac
+
               "$BIN" --version
+              echo "OK: fully static"
 
               echo "== package =="
               mkdir -p dist
