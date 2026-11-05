@@ -48,12 +48,6 @@
 #endif
 
 
-#ifdef XMRIG_FEATURE_BENCHMARK
-#   include "backend/common/benchmark/Benchmark.h"
-#   include "backend/common/benchmark/BenchState.h"
-#endif
-
-
 namespace xmrig {
 
 
@@ -154,11 +148,7 @@ public:
 
         status.start(threads, algo.l3());
 
-#       ifdef XMRIG_FEATURE_BENCHMARK
-        workers.start(threads, benchmark);
-#       else
         workers.start(threads);
-#       endif
     }
 
 
@@ -207,10 +197,6 @@ public:
     std::vector<CpuLaunchData> threads;
     String profileName;
     Workers<CpuLaunchData> workers;
-
-#   ifdef XMRIG_FEATURE_BENCHMARK
-    std::shared_ptr<Benchmark> benchmark;
-#   endif
 };
 
 
@@ -367,12 +353,6 @@ void xmrig::CpuBackend::setJob(const Job &job)
 
     stop();
 
-#   ifdef XMRIG_FEATURE_BENCHMARK
-    if (BenchState::size()) {
-        d_ptr->benchmark = std::make_shared<Benchmark>(threads.size(), this);
-    }
-#   endif
-
     d_ptr->threads = std::move(threads);
     d_ptr->start();
 }
@@ -469,22 +449,6 @@ void xmrig::CpuBackend::handleRequest(IApiRequest &request)
 {
     if (request.type() == IApiRequest::REQ_SUMMARY) {
         request.reply().AddMember("hugepages", d_ptr->hugePages(request.version(), request.doc()), request.doc().GetAllocator());
-    }
-}
-#endif
-
-
-#ifdef XMRIG_FEATURE_BENCHMARK
-xmrig::Benchmark *xmrig::CpuBackend::benchmark() const
-{
-    return d_ptr->benchmark.get();
-}
-
-
-void xmrig::CpuBackend::printBenchProgress() const
-{
-    if (d_ptr->benchmark) {
-        d_ptr->benchmark->printProgress();
     }
 }
 #endif

@@ -45,11 +45,6 @@
 #endif
 
 
-#ifdef XMRIG_FEATURE_BENCHMARK
-#   include "backend/common/benchmark/BenchState.h"
-#endif
-
-
 namespace xmrig {
 
 static constexpr uint32_t kReserveCount = 32768;
@@ -274,19 +269,6 @@ void xmrig::CpuWorker<N>::start()
                 current_job_nonces[i] = readUnaligned(m_job.nonce(i));
             }
 
-#           ifdef XMRIG_FEATURE_BENCHMARK
-            if (m_benchSize) {
-                if (current_job_nonces[0] >= m_benchSize) {
-                    return BenchState::done();
-                }
-
-                // Make each hash dependent on the previous one in single thread benchmark to prevent cheating with multiple threads
-                if (m_threads == 1) {
-                    *(uint64_t*)(m_job.blob()) ^= BenchState::data();
-                }
-            }
-#           endif
-
             bool valid = true;
 
             uint8_t miner_signature_saved[64];
@@ -355,15 +337,6 @@ void xmrig::CpuWorker<N>::start()
                 for (size_t i = 0; i < N; ++i) {
                     const uint64_t value = *reinterpret_cast<uint64_t*>(m_hash + (i * 32) + 24);
 
-#                   ifdef XMRIG_FEATURE_BENCHMARK
-                    if (m_benchSize) {
-                        if (current_job_nonces[i] < m_benchSize) {
-                            BenchState::add(value);
-                        }
-                    }
-                    else
-#                   endif
-
                     if (value < job.target()) {
                         uint8_t* extra_data = nullptr;
 
@@ -397,11 +370,7 @@ void xmrig::CpuWorker<N>::start()
 template<size_t N>
 bool xmrig::CpuWorker<N>::nextRound()
 {
-#   ifdef XMRIG_FEATURE_BENCHMARK
-    const uint32_t count = m_benchSize ? 1U : kReserveCount;
-#   else
     constexpr uint32_t count = kReserveCount;
-#   endif
 
     if (!m_job.nextRound(count, 1)) {
         JobResults::done(m_job.currentJob());
@@ -535,12 +504,7 @@ void xmrig::CpuWorker<N>::consumeJob()
 
     auto job = m_miner->job();
 
-#   ifdef XMRIG_FEATURE_BENCHMARK
-    m_benchSize          = job.benchSize();
-    const uint32_t count = m_benchSize ? 1U : kReserveCount;
-#   else
     constexpr uint32_t count = kReserveCount;
-#   endif
 
     m_job.add(job, count, Nonce::CPU);
 

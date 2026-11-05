@@ -104,10 +104,6 @@ private:
 #   ifdef XMRIG_ALGO_GHOSTRIDER
     ghostrider::HelperThread* m_ghHelper = nullptr;
 #   endif
-
-#   ifdef XMRIG_FEATURE_BENCHMARK
-    uint32_t m_benchSize    = 0;
-#   endif
 };
 
 

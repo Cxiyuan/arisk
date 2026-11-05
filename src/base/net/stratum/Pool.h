@@ -34,7 +34,6 @@
 namespace xmrig {
 
 
-class BenchConfig;
 class IClient;
 class IClientListener;
 
@@ -46,10 +45,7 @@ public:
         MODE_POOL,
         MODE_DAEMON,
         MODE_SELF_SELECT,
-        MODE_AUTO_ETH,
-#       ifdef XMRIG_FEATURE_BENCHMARK
-        MODE_BENCHMARK,
-#       endif
+        MODE_AUTO_ETH
     };
 
     static const String kDefaultPassword;
@@ -75,7 +71,6 @@ public:
     static const char *kUser;
     static const char *kSpendSecretKey;
     static const char *kDaemonZMQPort;
-    static const char *kNicehashHost;
 
     constexpr static int kKeepAliveTimeout         = 60;
     constexpr static uint16_t kDefaultPort         = 3333;
@@ -86,13 +81,6 @@ public:
     Pool(const char *host, uint16_t port, const char *user, const char *password, const char* spendSecretKey, int keepAlive, bool nicehash, bool tls, Mode mode);
     Pool(const char *url);
     Pool(const rapidjson::Value &object);
-
-#   ifdef XMRIG_FEATURE_BENCHMARK
-    Pool(const std::shared_ptr<BenchConfig> &benchmark);
-
-    BenchConfig *benchmark() const;
-    uint32_t benchSize() const;
-#   endif
 
     inline bool isNicehash() const                      { return m_flags.test(FLAG_NICEHASH); }
     inline bool isTLS() const                           { return m_flags.test(FLAG_TLS) || m_url.isTLS(); }
@@ -166,10 +154,6 @@ private:
     Url m_daemon;
     Url m_url;
     int m_zmqPort                   = -1;
-
-#   ifdef XMRIG_FEATURE_BENCHMARK
-    std::shared_ptr<BenchConfig> m_benchmark;
-#   endif
 };
 
 

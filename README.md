@@ -7,7 +7,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/xmrig/xmrig.svg)](https://github.com/xmrig/xmrig/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/xmrig/xmrig.svg)](https://github.com/xmrig/xmrig/network)
 
-XMRig is a high performance, open source, cross platform RandomX, KawPow, CryptoNight and [GhostRider](https://github.com/xmrig/xmrig/tree/master/src/crypto/ghostrider#readme) unified CPU/GPU miner and [RandomX benchmark](https://xmrig.com/benchmark). Official binaries are available for Windows, Linux, macOS and FreeBSD.
+XMRig is a high performance, open source, cross platform RandomX, KawPow, CryptoNight and [GhostRider](https://github.com/xmrig/xmrig/tree/master/src/crypto/ghostrider#readme) unified CPU/GPU miner. Official binaries are available for Windows, Linux, macOS and FreeBSD.
 
 ## Mining backends
 - **CPU** (x86/x64/ARMv7/ARMv8/RISC-V)
@@ -24,9 +24,31 @@ The preferred way to configure the miner is the [JSON config file](https://xmrig
 * **[Wizard](https://xmrig.com/wizard)** helps you create initial configuration for the miner.
 * **[Workers](http://workers.xmrig.info)** helps manage your miners via HTTP API.
 
-## Donations
-* Default donation 1% (1 minute in 100 minutes) can be increased via option `donate-level` or disabled in source code.
-* XMR: `48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD`
+## Build (CI only)
+
+This repository is built **exclusively** by GitHub Actions — no local build is
+supported or expected. Every push and pull request runs
+[`.github/workflows/build.yml`](.github/workflows/build.yml), which produces
+fully static binaries:
+
+* linked against musl libc inside an Alpine container, with `-static`
+  (`BUILD_STATIC=ON`) and statically built libuv / hwloc / OpenSSL
+* no runtime dependencies: no shared libc, libssl, libuv or hwloc needed —
+  the binary runs on any Linux distribution (x86-64 and aarch64) as-is
+* CI asserts static linkage (`readelf -d` shows no `NEEDED`, `ldd` reports
+  "not a dynamic executable") and runs `--version` before uploading artifacts
+
+Download the artifacts from the Actions run, or from **Releases** when a `v*`
+tag is pushed.
+
+## 本分支说明
+
+This fork has been stripped down so that the miner only ever opens network
+connections to the pool(s) listed in the configuration:
+
+* developer donation mining removed
+* built-in benchmark, online score submission and stress test removed
+* all hard-coded remote hosts and telemetry/update hints removed
 
 ## Developers
 * **[xmrig](https://github.com/xmrig)**

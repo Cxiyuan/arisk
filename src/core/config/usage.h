@@ -41,14 +41,14 @@ static inline const std::string &usage()
 
     u += "Usage: " APP_ID " [OPTIONS]\n\nNetwork:\n";
     u += "  -o, --url=URL                 URL of mining server\n";
-    u += "  -a, --algo=ALGO               mining algorithm https://xmrig.com/docs/algorithms\n";
+    u += "  -a, --algo=ALGO               mining algorithm (see doc/ALGORITHMS.md)\n";
     u += "      --coin=COIN               specify coin instead of algorithm\n";
     u += "  -u, --user=USERNAME           username for mining server\n";
     u += "  -p, --pass=PASSWORD           password for mining server\n";
     u += "  -O, --userpass=U:P            username:password pair for mining server\n";
     u += "  -x, --proxy=HOST:PORT         connect through a SOCKS5 proxy\n";
     u += "  -k, --keepalive               send keepalived packet for prevent timeout (needs pool support)\n";
-    u += "      --nicehash                enable nicehash.com support\n";
+    u += "      --nicehash                enable NiceHash protocol support\n";
     u += "      --rig-id=ID               rig identifier for pool-side statistics (needs pool support)\n";
 
 #   ifdef XMRIG_FEATURE_TLS
@@ -72,8 +72,6 @@ static inline const std::string &usage()
     u += "  -r, --retries=N               number of times to retry before switch to backup server (default: 5)\n";
     u += "  -R, --retry-pause=N           time to pause between retries (default: 5)\n";
     u += "      --user-agent              set custom user-agent string for pool\n";
-    u += "      --donate-level=N          donate level, default 1%% (1 minute in 100 minutes)\n";
-    u += "      --donate-over-proxy=N     control donate over xmrig-proxy feature\n";
 
     u += "\nCPU backend:\n";
 
@@ -183,17 +181,6 @@ static inline const std::string &usage()
 #   endif
     u += "      --pause-on-battery        pause mine on battery power\n";
     u += "      --pause-on-active=N       pause mine when the user is active (resume after N seconds of last activity)\n";
-
-#   ifdef XMRIG_FEATURE_BENCHMARK
-    u += "      --stress                  run continuous stress test to check system stability\n";
-    u += "      --bench=N                 run benchmark, N can be between 1M and 10M\n";
-#   ifdef XMRIG_FEATURE_HTTP
-    u += "      --submit                  perform an online benchmark and submit result for sharing\n";
-    u += "      --verify=ID               verify submitted benchmark by ID\n";
-#   endif
-    u += "      --seed=SEED               custom RandomX seed for benchmark\n";
-    u += "      --hash=HASH               compare benchmark result with specified hash\n";
-#   endif
 
 #   ifdef XMRIG_FEATURE_DMI
     u += "      --no-dmi                  disable DMI/SMBIOS reader\n";

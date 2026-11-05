@@ -152,7 +152,6 @@ public:
         reply.AddMember("kind",         APP_KIND, allocator);
         reply.AddMember("ua",           Platform::userAgent().toJSON(), allocator);
         reply.AddMember("cpu",          Cpu::toJSON(doc), allocator);
-        reply.AddMember("donate_level", controller->config()->pools().donateLevel(), allocator);
         reply.AddMember("paused",       !enabled, allocator);
 
         Value algo(kArrayType);
@@ -348,12 +347,6 @@ public:
                  Hashrate::format({ maxHashrate[algorithm] > 0.0, maxHashrate[algorithm] * scale },   num + 16 * 3, 16), h,
                  avg_hashrate_buf
                  );
-
-#       ifdef XMRIG_FEATURE_BENCHMARK
-        for (auto backend : backends) {
-            backend->printBenchProgress();
-        }
-#       endif
     }
 
 
@@ -550,7 +543,7 @@ void xmrig::Miner::setEnabled(bool enabled)
 }
 
 
-void xmrig::Miner::setJob(const Job &job, bool donate)
+void xmrig::Miner::setJob(const Job &job)
 {
     for (IBackend *backend : d_ptr->backends) {
         backend->prepare(job);
@@ -573,29 +566,22 @@ void xmrig::Miner::setJob(const Job &job, bool donate)
 
     mutex.lock();
 
-    const uint8_t index = donate ? 1 : 0;
-    const bool same_job_index = d_ptr->job.index() == index;
-
-    d_ptr->reset = !(d_ptr->job.index() == 1 && index == 0 && d_ptr->userJobId == job.id());
+    d_ptr->reset = true;
 
     // Don't reset nonce if pool sends the same hashing blob again, but with different difficulty (for example)
     if (d_ptr->job.isEqualBlob(job)) {
         d_ptr->reset = false;
     }
 
-    d_ptr->job   = job;
-    d_ptr->job.setIndex(index);
-
-    if (index == 0) {
-        d_ptr->userJobId = job.id();
-    }
+    d_ptr->job = job;
+    d_ptr->job.setIndex(0);
+    d_ptr->userJobId = job.id();
 
 #   ifdef XMRIG_ALGO_RANDOMX
     const bool ready = d_ptr->initRX();
 
     // Always reset nonce on RandomX dataset change
-    // Except for switching to/from donation
-    if (!ready && same_job_index) {
+    if (!ready) {
         d_ptr->reset = true;
     }
 #   else

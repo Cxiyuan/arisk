@@ -51,7 +51,6 @@ public:
     const CudaThread thread;
     const int64_t affinity;
     const Miner *miner;
-    const uint32_t benchSize = 0;
 };
 
 

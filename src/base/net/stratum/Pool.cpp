@@ -43,12 +43,6 @@
 #endif
 
 
-#ifdef XMRIG_FEATURE_BENCHMARK
-#   include "base/net/stratum/benchmark/BenchClient.h"
-#   include "base/net/stratum/benchmark/BenchConfig.h"
-#endif
-
-
 #ifdef _MSC_VER
 #   define strcasecmp  _stricmp
 #endif
@@ -81,7 +75,6 @@ const char *Pool::kSni                    = "sni";
 const char *Pool::kUrl                    = "url";
 const char *Pool::kUser                   = "user";
 const char *Pool::kSpendSecretKey         = "spend-secret-key";
-const char *Pool::kNicehashHost           = "nicehash.com";
 
 
 } // namespace xmrig
@@ -107,7 +100,7 @@ xmrig::Pool::Pool(const char *host, uint16_t port, const char *user, const char 
     m_jobTimeout(kDefaultJobTimeout),
     m_url(host, port, tls)
 {
-    m_flags.set(FLAG_NICEHASH, nicehash || strstr(host, kNicehashHost));
+    m_flags.set(FLAG_NICEHASH, nicehash);
     m_flags.set(FLAG_TLS,      tls);
 }
 
@@ -136,7 +129,7 @@ xmrig::Pool::Pool(const rapidjson::Value &object) :
     m_zmqPort        = Json::getInt(object, kDaemonZMQPort, m_zmqPort);
 
     m_flags.set(FLAG_ENABLED,  Json::getBool(object, kEnabled, true));
-    m_flags.set(FLAG_NICEHASH, Json::getBool(object, kNicehash) || m_url.host().contains(kNicehashHost));
+    m_flags.set(FLAG_NICEHASH, Json::getBool(object, kNicehash));
     m_flags.set(FLAG_TLS,      Json::getBool(object, kTls) || m_url.isTLS());
     m_flags.set(FLAG_SNI,      Json::getBool(object, kSni));
 
@@ -151,30 +144,6 @@ xmrig::Pool::Pool(const rapidjson::Value &object) :
     }
 }
 
-
-#ifdef XMRIG_FEATURE_BENCHMARK
-xmrig::Pool::Pool(const std::shared_ptr<BenchConfig> &benchmark) :
-    m_mode(MODE_BENCHMARK),
-    m_flags(1 << FLAG_ENABLED),
-    m_url(BenchConfig::kBenchmark),
-    m_benchmark(benchmark)
-{
-}
-
-
-xmrig::BenchConfig *xmrig::Pool::benchmark() const
-{
-    assert(m_mode == MODE_BENCHMARK && m_benchmark);
-
-    return m_benchmark.get();
-}
-
-
-uint32_t xmrig::Pool::benchSize() const
-{
-    return benchmark()->size();
-}
-#endif
 
 
 bool xmrig::Pool::isEnabled() const
@@ -248,11 +217,6 @@ xmrig::IClient *xmrig::Pool::createClient(int id, IClientListener *listener) con
 #   if defined XMRIG_ALGO_KAWPOW || defined XMRIG_ALGO_GHOSTRIDER
     else if (m_mode == MODE_AUTO_ETH) {
         client = new AutoClient(id, Platform::userAgent(), listener);
-    }
-#   endif
-#   ifdef XMRIG_FEATURE_BENCHMARK
-    else if (m_mode == MODE_BENCHMARK) {
-        client = new BenchClient(m_benchmark, listener);
     }
 #   endif
 
