@@ -14,21 +14,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  CMAKE_ARGS: >-
-    -DCMAKE_BUILD_TYPE=Release
-    -DBUILD_STATIC=ON
-    -DWITH_OPENCL=OFF
-    -DWITH_CUDA=OFF
-    -DWITH_NVML=OFF
-    -DWITH_ADL=OFF
-
 jobs:
   build:
     name: linux-${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
-    container: alpine:3.20
-    timeout-minutes: 90
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -42,50 +32,55 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install toolchain
-        run: |
-          apk add --no-cache build-base cmake linux-headers perl wget file \
-            autoconf automake libtool binutils
-
-      - name: Build static dependencies (libuv, hwloc, OpenSSL)
-        run: |
-          sh scripts/build_deps.sh
-
-      - name: Configure
-        run: |
-          cmake -S . -B build-ci $CMAKE_ARGS -DXMRIG_DEPS="$PWD/deps"
-
-      - name: Build
-        run: |
-          cmake --build build-ci --parallel "$(nproc)"
-
-      - name: Verify static linkage
+      - name: Build fully static binary (Alpine/musl)
         run: |
           set -eu
-          BIN="$(ls build-ci/xmrig*)"
-          file "$BIN"
-          if readelf -d "$BIN" | grep -q 'NEEDED'; then
-            echo "::error::binary has dynamic dependencies"
-            readelf -d "$BIN"
-            exit 1
-          fi
-          if ldd "$BIN" 2>&1 | grep -qi 'not a dynamic executable'; then
-            echo "OK: fully static"
-          else
-            ldd "$BIN" || true
-            echo "::error::binary is not static"
-            exit 1
-          fi
-          "$BIN" --version
+          docker run --rm \
+            -v "$PWD:/work" \
+            -w /work \
+            alpine:3.20 \
+            sh -euc '
+              apk add --no-cache build-base cmake linux-headers perl wget file \
+                autoconf automake libtool binutils
 
-      - name: Package
-        run: |
-          set -eu
-          mkdir -p dist
-          cp "$(ls build-ci/xmrig*)" dist/arisk
-          chmod +x dist/arisk
-          tar -C dist -czf "arisk-linux-${{ matrix.arch }}.tar.gz" arisk
-          ls -l dist dist/arisk
+              echo "== dependencies =="
+              sh scripts/build.uv.sh
+              sh scripts/build.hwloc.sh
+              sh scripts/build.openssl3.sh
+
+              echo "== configure =="
+              cmake -S . -B build-ci \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DBUILD_STATIC=ON \
+                -DXMRIG_DEPS=/work/deps \
+                -DWITH_OPENCL=OFF \
+                -DWITH_CUDA=OFF \
+                -DWITH_NVML=OFF \
+                -DWITH_ADL=OFF
+
+              echo "== build =="
+              cmake --build build-ci --parallel "$(nproc)"
+
+              echo "== verify =="
+              BIN="$(ls build-ci/xmrig*)"
+              file "$BIN"
+              if readelf -d "$BIN" | grep -q NEEDED; then
+                echo "binary has dynamic dependencies:"; readelf -d "$BIN"; exit 1
+              fi
+              if ldd "$BIN" 2>&1 | grep -qi "not a dynamic executable"; then
+                echo "OK: fully static"
+              else
+                ldd "$BIN"; exit 1
+              fi
+              "$BIN" --version
+
+              echo "== package =="
+              mkdir -p dist
+              cp "$BIN" dist/arisk
+              chmod +x dist/arisk
+              tar -C dist -czf "arisk-linux-${{ matrix.arch }}.tar.gz" arisk
+              ls -l dist
+            '
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
